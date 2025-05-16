@@ -46,19 +46,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["example_project"]
 
-[tool.mypy]
-files = ["example_project"]
-disallow_untyped_defs = true
-disallow_any_unimported = true
-no_implicit_optional = true
-check_untyped_defs = true
-warn_return_any = true
-warn_unused_ignores = true
-show_error_codes = true
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-
 [tool.ruff]
 target-version = "py310"
 line-length = 120
@@ -114,14 +101,70 @@ ignore = [
 "tests/*" = ["S101"]
 
 [tool.ruff.format]
-
-
 preview = true
+
+[tool.mypy]
+files = ["example_project"]
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"                 # Minimum pytest version
+addopts = "-ra -q --strict-markers --cov-report=term-missing"  # Pytest run options
+testpaths = ["tests"]              # Test directories
+pythonpath = ["."]                 # Python module import paths
+markers = [
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["example_project"]
+
 [tool.coverage.report]
 skip_empty = true
 
-[tool.coverage.run]
+exclude_lines = [                  # Line patterns to exclude from analysis
+    "pragma: no cover",            # Lines with 'no cover' directive
+    "def __repr__",                # Repr methods
+    "if self.debug:",              # Debugging code
+    "raise NotImplementedError",   # Stubs for unimplemented methods
+    "if __name__ == .__main__.:",  # Blocks executed on direct run
+    "pass",                        # Empty blocks
+    "raise ImportError",           # Import error handling
+]
+ignore_errors = true               # Ignore errors during report generation
+omit = [                           # Files to exclude from analysis
+    "tests/*",                     # Tests
+    "setup.py",                    # Setup file
+    "config.py",                   # Configuration file
+]
 
 
-branch = true
-source = ["example_project"]
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+skipsdist = true
+envlist = py310, py311, py312, py313
+
+[gh-actions]
+python =
+    3.10: py310
+    3.11: py311
+    3.12: py312
+    3.13: py313
+
+[testenv]
+passenv = PYTHON_VERSION
+allowlist_externals = uv
+commands =
+    uv sync --python {envpython}
+    uv run python -m pytest --doctest-modules tests --cov --cov-config=pyproject.toml --cov-report=xml
+    mypy
+"""
